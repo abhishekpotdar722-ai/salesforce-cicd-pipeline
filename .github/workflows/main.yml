@@ -60,7 +60,7 @@ jobs:
       # -------------------------------
       - name: Run PMD Scan
         run: |
-          ./pmd-bin-*/bin/pmd check \
+          ./pmd/bin/pmd check \
             -d force-app \
             -R category/apex/security.xml \
             -f text
