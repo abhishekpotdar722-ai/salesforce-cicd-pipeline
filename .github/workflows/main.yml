@@ -58,9 +58,9 @@ jobs:
       # -------------------------------
       # Run Apex Static Scan
       # -------------------------------
-      - name: Run Apex PMD Scan
+      - name: Run PMD Scan
         run: |
-          ./pmd-bin-*/bin/run.sh pmd \
+          ./pmd-bin-*/bin/pmd check \
             -d force-app \
             -R category/apex/security.xml \
             -f text
