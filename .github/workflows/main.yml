@@ -1,60 +1,52 @@
 name: Salesforce CI/CD Listener
 
-# on:
-#   repository_dispatch:
-#     types: [salesforce_deploy]
 on:
   push:
     branches:
       - dev
       - main
   workflow_dispatch:
+
 jobs:
   receive-trigger:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Print Trigger Details
-        run: |
-          echo "Triggered from repository: ${{ github.event.client_payload.source_repo }}"
-          echo "Branch: ${{ github.event.client_payload.branch }}"
-          echo "Commit ID: ${{ github.event.client_payload.commit_id }}"
-
-      - name: Checkout Pipeline Repo
-        uses: actions/checkout@v4
-
-      - name: Confirm Trigger Received
-        run: echo "Repository Dispatch Event Received Successfully 🚀"
-      
       - name: Checkout Source Repo
         uses: actions/checkout@v4
         with:
           repository: abhishekpotdar722-ai/salesforce-demo
           token: ${{ secrets.PIPELINE_TRIGGER_TOKEN }}
 
+      # ✅ Install Modern Salesforce CLI
       - name: Install Salesforce CLI
         run: |
-          npm install sfdx-cli --global
-          sfdx version
+          npm install @salesforce/cli --global
+          sf version
 
+      # ✅ Authenticate Scratch Org
       - name: Authenticate Dev1 Org
         run: |
           export NODE_TLS_REJECT_UNAUTHORIZED=0
           echo "${{ secrets.DEV1_SFDX_AUTH_URL }}" > auth.txt
-          sfdx auth:sfdxurl:store -f auth.txt -a dev1
+          sf org login sfdx-url --sfdx-url-file auth.txt --alias dev1
 
-      - name: Convert to Metadata Format
-        run: |
-          sfdx force:source:convert -d mdapi_output
+      # ✅ Verify Auth
       - name: List Authorized Orgs
         run: |
           export NODE_TLS_REJECT_UNAUTHORIZED=0
-          sfdx force:org:list
-        
+          sf org list
+
+      # ✅ Convert Source
+      - name: Convert Source to Metadata
+        run: |
+          sf project convert source --output-dir mdapi_output
+
+      # ✅ Deploy
       - name: Deploy to Dev1-SFP
         run: |
           export NODE_TLS_REJECT_UNAUTHORIZED=0
-          sfdx force:mdapi:deploy \
-            -d mdapi_output \
-            -u dev1 \
-            -w 30
+          sf project deploy start \
+            --metadata-dir mdapi_output \
+            --target-org dev1 \
+            --wait 30
