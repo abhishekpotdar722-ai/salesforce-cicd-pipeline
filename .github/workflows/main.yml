@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: abhishekpotdar722-ai/salesforce-demo
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.PIPELINE_TRIGGER_TOKEN }}
 
       - name: Install Salesforce CLI
         run: |
