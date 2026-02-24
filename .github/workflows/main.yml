@@ -45,5 +45,5 @@ jobs:
         run: |
           sfdx force:mdapi:deploy \
             -d mdapi_output \
-            -u dev1 \
+            -u abhishekpotdar722@gmail.com.training.dev1-sfp \
             -w 30
