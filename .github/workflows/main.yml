@@ -1,4 +1,4 @@
-name: Salesforce CI/CD Listener
+name: Salesforce CI/CD with Scan + Deploy
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  receive-trigger:
+  scan-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,31 +18,77 @@ jobs:
           repository: abhishekpotdar722-ai/salesforce-demo
           token: ${{ secrets.PIPELINE_TRIGGER_TOKEN }}
 
-      # ✅ Install Modern Salesforce CLI
+      # -------------------------------
+      # Install Salesforce CLI
+      # -------------------------------
       - name: Install Salesforce CLI
         run: |
           npm install @salesforce/cli --global
           sf version
 
-      # ✅ Authenticate Scratch Org
+      # -------------------------------
+      # Install Node Dependencies
+      # -------------------------------
+      - name: Install Node Modules
+        run: npm install
+
+      # -------------------------------
+      # LWC Scan (ESLint)
+      # -------------------------------
+      - name: Run LWC ESLint Scan
+        run: npm run lint
+
+      # -------------------------------
+      # Dependency Scan
+      # -------------------------------
+      - name: Run Dependency Scan
+        run: npm audit --audit-level=high
+
+      # -------------------------------
+      # Download PMD
+      # -------------------------------
+      - name: Download PMD
+        run: |
+          wget https://github.com/pmd/pmd/releases/latest/download/pmd-bin.zip
+          unzip pmd-bin.zip
+
+      # -------------------------------
+      # Run Apex Static Scan
+      # -------------------------------
+      - name: Run Apex PMD Scan
+        run: |
+          ./pmd-bin-*/bin/run.sh pmd \
+            -d force-app \
+            -R category/apex/security.xml \
+            -f text
+
+      # -------------------------------
+      # Authenticate Scratch Org
+      # -------------------------------
       - name: Authenticate Dev1 Org
         run: |
           export NODE_TLS_REJECT_UNAUTHORIZED=0
           echo "${{ secrets.DEV1_SFDX_AUTH_URL }}" > auth.txt
           sf org login sfdx-url --sfdx-url-file auth.txt --alias dev1
 
-      # ✅ Verify Auth
+      # -------------------------------
+      # Verify Org Auth
+      # -------------------------------
       - name: List Authorized Orgs
         run: |
           export NODE_TLS_REJECT_UNAUTHORIZED=0
           sf org list
 
-      # ✅ Convert Source
+      # -------------------------------
+      # Convert Source
+      # -------------------------------
       - name: Convert Source to Metadata
         run: |
           sf project convert source --output-dir mdapi_output
 
-      # ✅ Deploy
+      # -------------------------------
+      # Deploy
+      # -------------------------------
       - name: Deploy to Dev1-SFP
         run: |
           export NODE_TLS_REJECT_UNAUTHORIZED=0
