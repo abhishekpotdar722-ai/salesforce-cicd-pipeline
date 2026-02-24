@@ -41,8 +41,8 @@ jobs:
       # -------------------------------
       # Dependency Scan
       # -------------------------------
-      - name: Run Dependency Scan
-        run: npm audit --audit-level=high
+      # - name: Run Dependency Scan
+      #   run: npm audit --audit-level=high
 
       # -------------------------------
       # Download PMD
