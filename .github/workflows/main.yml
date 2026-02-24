@@ -1,9 +1,13 @@
 name: Salesforce CI/CD Listener
 
+# on:
+#   repository_dispatch:
+#     types: [salesforce_deploy]
 on:
-  repository_dispatch:
-    types: [salesforce_deploy]
-
+  push:
+    branches:
+      - dev
+      - main
 jobs:
   receive-trigger:
     runs-on: ubuntu-latest
@@ -40,10 +44,12 @@ jobs:
       - name: Convert to Metadata Format
         run: |
           sfdx force:source:convert -d mdapi_output
-
+      - name: List Authorized Orgs
+        run: sfdx force:org:list
+        
       - name: Deploy to Dev1-SFP
         run: |
           sfdx force:mdapi:deploy \
             -d mdapi_output \
-            -u abhishekpotdar722@gmail.com.training.dev1-sfp \
+            -u dev1 \
             -w 30
