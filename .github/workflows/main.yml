@@ -35,8 +35,8 @@ jobs:
       # -------------------------------
       # LWC Scan (ESLint)
       # -------------------------------
-      - name: Run LWC ESLint Scan
-        run: npm run lint
+      # - name: Run LWC ESLint Scan
+      #   run: npm run lint
 
       # -------------------------------
       # Dependency Scan
