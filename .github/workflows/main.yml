@@ -39,6 +39,7 @@ jobs:
 
       - name: Authenticate Dev1 Org
         run: |
+          export NODE_TLS_REJECT_UNAUTHORIZED=0
           echo "${{ secrets.DEV1_SFDX_AUTH_URL }}" > auth.txt
           sfdx auth:sfdxurl:store -f auth.txt -a dev1
 
@@ -46,10 +47,13 @@ jobs:
         run: |
           sfdx force:source:convert -d mdapi_output
       - name: List Authorized Orgs
-        run: sfdx force:org:list
+        run: |
+          export NODE_TLS_REJECT_UNAUTHORIZED=0
+          sfdx force:org:list
         
       - name: Deploy to Dev1-SFP
         run: |
+          export NODE_TLS_REJECT_UNAUTHORIZED=0
           sfdx force:mdapi:deploy \
             -d mdapi_output \
             -u dev1 \
