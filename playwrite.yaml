@@ -1,0 +1,75 @@
+name: Playwright Validation
+
+on:
+  repository_dispatch:
+    types: [copado_deploy_result]
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+
+      # ----------------------------
+      # Print Payload From Copado
+      # ----------------------------
+      - name: Print payload
+        run: |
+          echo "Status: ${{ github.event.client_payload.status }}"
+          echo "Environment: ${{ github.event.client_payload.environment }}"
+          echo "User Story: ${{ github.event.client_payload.userStory }}"
+          echo "Components: ${{ github.event.client_payload.components }}"
+
+      # ----------------------------
+      # Check Deployment Status
+      # ----------------------------
+      - name: Check Deployment Status
+        run: |
+          echo "Deployment Status: ${{ github.event.client_payload.status }}"
+
+      # ----------------------------
+      # Run Tests Only if Deployment Success
+      # ----------------------------
+      - name: Run Playwright Tests
+        if: github.event.client_payload.status == 'SUCCESS'
+        run: |
+          echo "Running tests for environment ${{ github.event.client_payload.environment }}"
+          npx playwright test --grep "${{ github.event.client_payload.environment }}"
+
+      # ----------------------------
+      # Skip Tests if Failed
+      # ----------------------------
+      - name: Skip Tests if Deployment Failed
+        if: github.event.client_payload.status == 'FAILED'
+        run: echo "Deployment failed. Skipping Playwright tests."
+
+      # ----------------------------
+      # Email Notification
+      # ----------------------------
+      - name: Send Email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: Copado Deployment Result
+          to: abhishek@example.com
+          from: CI-CD
+          body: |
+            Deployment Status: ${{ github.event.client_payload.status }}
+            Environment: ${{ github.event.client_payload.environment }}
+            User Story: ${{ github.event.client_payload.userStory }}
+            Components: ${{ github.event.client_payload.components }}
