@@ -9,56 +9,71 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
+      # ----------------------------
+      # Install Node
+      # ----------------------------
       - name: Install Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      # ----------------------------
+      # Install Dependencies
+      # ----------------------------
       - name: Install Dependencies
         run: npm install
 
+      # ----------------------------
+      # Install Playwright
+      # ----------------------------
       - name: Install Playwright
         run: npx playwright install --with-deps
 
       # ----------------------------
       # Print Payload From Copado
       # ----------------------------
-      - name: Print payload
+      - name: Print Copado Payload
         run: |
           echo "Status: ${{ github.event.client_payload.status }}"
+          echo "Deployment Status: ${{ github.event.client_payload.deploymentStatus }}"
           echo "Environment: ${{ github.event.client_payload.environment }}"
-          echo "User Story: ${{ github.event.client_payload.userStory }}"
-          echo "Components: ${{ github.event.client_payload.components }}"
+          echo "Components Deployed: ${{ github.event.client_payload.componentsDeployed }}"
 
       # ----------------------------
-      # Check Deployment Status
+      # Validate Deployment Status
       # ----------------------------
-      - name: Check Deployment Status
+      - name: Validate Deployment
         run: |
-          echo "Deployment Status: ${{ github.event.client_payload.status }}"
+          echo "Deployment status received from Copado:"
+          echo "${{ github.event.client_payload.deploymentStatus }}"
 
       # ----------------------------
-      # Run Tests Only if Deployment Success
+      # Run Playwright Tests
       # ----------------------------
       - name: Run Playwright Tests
         if: github.event.client_payload.status == 'SUCCESS'
         run: |
-          echo "Running tests for environment ${{ github.event.client_payload.environment }}"
-          npx playwright test --grep "${{ github.event.client_payload.environment }}"
+          echo "Deployment successful. Running Playwright tests..."
+          echo "Environment: ${{ github.event.client_payload.environment }}"
+          echo "Components deployed: ${{ github.event.client_payload.componentsDeployed }}"
+          npx playwright test
 
       # ----------------------------
-      # Skip Tests if Failed
+      # Skip Tests if Deployment Failed
       # ----------------------------
       - name: Skip Tests if Deployment Failed
         if: github.event.client_payload.status == 'FAILED'
-        run: echo "Deployment failed. Skipping Playwright tests."
+        run: |
+          echo "Deployment failed in Copado."
+          echo "Skipping Playwright execution."
 
       # ----------------------------
-      # Email Notification
+      # Send Email Notification
       # ----------------------------
-      - name: Send Email
+      - name: Send Email Notification
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
@@ -69,7 +84,11 @@ jobs:
           to: abhishek@example.com
           from: CI-CD
           body: |
-            Deployment Status: ${{ github.event.client_payload.status }}
+            Copado Deployment Notification
+
+            Status: ${{ github.event.client_payload.status }}
+            Deployment Status: ${{ github.event.client_payload.deploymentStatus }}
             Environment: ${{ github.event.client_payload.environment }}
-            User Story: ${{ github.event.client_payload.userStory }}
-            Components: ${{ github.event.client_payload.components }}
+            Components Deployed: ${{ github.event.client_payload.componentsDeployed }}
+
+            Playwright tests were triggered automatically if deployment succeeded.
