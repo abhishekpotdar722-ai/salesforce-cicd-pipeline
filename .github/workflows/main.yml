@@ -5,7 +5,12 @@ on:
     branches:
       - dev
       - main
+
   workflow_dispatch:
+
+  repository_dispatch:
+    types: [copado]
+  
 
 jobs:
   scan-and-deploy:
