@@ -1,0 +1,44 @@
+name: Playwright Salesforce Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      TEST_EXEC_EXECUTION_KEY:
+        description: 'Execution Key'
+        required: false
+        default: ''
+
+      TEST_EXEC_INPUT_TYPE:
+        description: 'Input Type'
+        required: true
+        default: 'Key'
+        type: choice
+        options:
+          - Key
+          - Label
+
+      TEST_EXEC_INPUT_VALUE:
+        description: 'Input Value'
+        required: true
+        default: ''
+
+  repository_dispatch:
+    types: [copado]
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Resolve Inputs
+        run: |
+          echo "TEST_EXEC_INPUT_TYPE=${{ github.event.inputs.TEST_EXEC_INPUT_TYPE || github.event.client_payload.TEST_EXEC_INPUT_TYPE }}" >> $GITHUB_ENV
+          echo "TEST_EXEC_INPUT_VALUE=${{ github.event.inputs.TEST_EXEC_INPUT_VALUE || github.event.client_payload.TEST_EXEC_INPUT_VALUE }}" >> $GITHUB_ENV
+
+      - name: Print Env Variables
+        run: |
+          echo "Type: $TEST_EXEC_INPUT_TYPE"
+          echo "Value: $TEST_EXEC_INPUT_VALUE"
+
+   
