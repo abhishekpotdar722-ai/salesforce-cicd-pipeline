@@ -1,0 +1,66 @@
+name: PR Merge Handler
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  handle-merged-pr:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 🔹 Step 1: Print PR Details
+      - name: PR Details
+        run: |
+          echo "PR Number: ${{ github.event.pull_request.number }}"
+          echo "PR Title: ${{ github.event.pull_request.title }}"
+          echo "Merged By: ${{ github.event.pull_request.merged_by.login }}"
+          echo "Source Branch: ${{ github.event.pull_request.head.ref }}"
+          echo "Target Branch: ${{ github.event.pull_request.base.ref }}"
+
+      # 🔹 Step 2: Get Changed Files (BEST WAY)
+      - name: Get changed files from PR
+        id: files
+        run: |
+          curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files \
+          | jq -r '.[].filename' > files.txt
+
+          echo "Changed files:"
+          cat files.txt
+
+      # 🔹 Step 3: Convert to CSV (for payload)
+      - name: Convert to CSV
+        id: convert
+        run: |
+          files=$(paste -sd "," files.txt)
+          echo "files=$files" >> $GITHUB_OUTPUT
+
+      # 🔹 Step 4: Generate Tags (Salesforce Example)
+      - name: Generate Tags
+        id: tags
+        run: |
+          tags=""
+
+          grep -q "objects/Account" files.txt && tags="$tags,account"
+          grep -q "\.cls" files.txt && tags="$tags,apex"
+          grep -q "flows" files.txt && tags="$tags,flow"
+
+          tags=$(echo $tags | sed 's/^,//')
+
+          echo "Generated Tags: $tags"
+          echo "tags=$tags" >> $GITHUB_OUTPUT
+
+      # 🔹 Step 5: Use Output (Playwright / Copado / API)
+      - name: Use Output
+        run: |
+          echo "FILES: ${{ steps.convert.outputs.files }}"
+          echo "TAGS: ${{ steps.tags.outputs.tags }}"
